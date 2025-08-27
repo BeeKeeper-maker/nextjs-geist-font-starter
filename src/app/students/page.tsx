@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
+import { PERMISSIONS, hasPermission } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +72,10 @@ export default function StudentsPage() {
     if (status === "unauthenticated") {
       redirect("/auth/signin");
     }
-  }, [status]);
+    if (session?.user && !hasPermission(session.user.role, PERMISSIONS.VIEW_STUDENTS)) {
+      redirect("/unauthorized");
+    }
+  }, [status, session]);
 
   useEffect(() => {
     if (session) {
@@ -209,143 +213,145 @@ export default function StudentsPage() {
               <p className="text-sm text-gray-600 mt-1">Manage student records and information</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                <DialogTrigger asChild>
-                  <Button>Add New Student</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Add New Student</DialogTitle>
-                    <DialogDescription>
-                      Enter the student's information to register them in the madrasha.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleAddStudent} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name *</Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="Enter student's full name"
-                          required
-                        />
+              {hasPermission(session.user.role, PERMISSIONS.MANAGE_STUDENTS) && (
+                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                  <DialogTrigger asChild>
+                    <Button>Add New Student</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Add New Student</DialogTitle>
+                      <DialogDescription>
+                        Enter the student's information to register them in the madrasha.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddStudent} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Full Name *</Label>
+                          <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="Enter student's full name"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="rollNumber">Roll Number *</Label>
+                          <Input
+                            id="rollNumber"
+                            value={formData.rollNumber}
+                            onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+                            placeholder="Enter roll number"
+                            required
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="rollNumber">Roll Number *</Label>
-                        <Input
-                          id="rollNumber"
-                          value={formData.rollNumber}
-                          onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
-                          placeholder="Enter roll number"
-                          required
-                        />
-                      </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="classId">Class *</Label>
-                      <Select value={formData.classId} onValueChange={(value) => setFormData({ ...formData, classId: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classes.map((cls) => (
-                            <SelectItem key={cls.id} value={cls.id.toString()}>
-                              {cls.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="classId">Class *</Label>
+                        <Select value={formData.classId} onValueChange={(value) => setFormData({ ...formData, classId: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a class" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {classes.map((cls) => (
+                              <SelectItem key={cls.id} value={cls.id.toString()}>
+                                {cls.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="fatherName">Father's Name</Label>
-                        <Input
-                          id="fatherName"
-                          value={formData.fatherName}
-                          onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
-                          placeholder="Enter father's name"
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="fatherName">Father's Name</Label>
+                          <Input
+                            id="fatherName"
+                            value={formData.fatherName}
+                            onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                            placeholder="Enter father's name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="motherName">Mother's Name</Label>
+                          <Input
+                            id="motherName"
+                            value={formData.motherName}
+                            onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                            placeholder="Enter mother's name"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="motherName">Mother's Name</Label>
-                        <Input
-                          id="motherName"
-                          value={formData.motherName}
-                          onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
-                          placeholder="Enter mother's name"
-                        />
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="contactNumber">Contact Number</Label>
-                        <Input
-                          id="contactNumber"
-                          value={formData.contactNumber}
-                          onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                          placeholder="Enter contact number"
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="contactNumber">Contact Number</Label>
+                          <Input
+                            id="contactNumber"
+                            value={formData.contactNumber}
+                            onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                            placeholder="Enter contact number"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            placeholder="Enter email address"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="Enter email address"
-                        />
-                      </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="presentAddress">Present Address</Label>
-                      <Textarea
-                        id="presentAddress"
-                        value={formData.presentAddress}
-                        onChange={(e) => setFormData({ ...formData, presentAddress: e.target.value })}
-                        placeholder="Enter present address"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="guardianName">Guardian Name</Label>
-                        <Input
-                          id="guardianName"
-                          value={formData.guardianName}
-                          onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
-                          placeholder="Enter guardian's name"
+                        <Label htmlFor="presentAddress">Present Address</Label>
+                        <Textarea
+                          id="presentAddress"
+                          value={formData.presentAddress}
+                          onChange={(e) => setFormData({ ...formData, presentAddress: e.target.value })}
+                          placeholder="Enter present address"
+                          rows={3}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guardianPhone">Guardian Phone</Label>
-                        <Input
-                          id="guardianPhone"
-                          value={formData.guardianPhone}
-                          onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value })}
-                          placeholder="Enter guardian's phone"
-                        />
-                      </div>
-                    </div>
 
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={formLoading}>
-                        {formLoading ? "Adding..." : "Add Student"}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guardianName">Guardian Name</Label>
+                          <Input
+                            id="guardianName"
+                            value={formData.guardianName}
+                            onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
+                            placeholder="Enter guardian's name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guardianPhone">Guardian Phone</Label>
+                          <Input
+                            id="guardianPhone"
+                            value={formData.guardianPhone}
+                            onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value })}
+                            placeholder="Enter guardian's phone"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={formLoading}>
+                          {formLoading ? "Adding..." : "Add Student"}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
               <Button variant="outline" asChild>
                 <Link href="/dashboard">Back to Dashboard</Link>
               </Button>
@@ -433,19 +439,23 @@ export default function StudentsPage() {
                             <Button asChild size="sm" variant="outline">
                               <Link href={`/students/${student.id}`}>View Details</Link>
                             </Button>
-                            <Button asChild size="sm" variant="outline">
-                              <Link href={`/students/${student.id}/edit`}>Edit</Link>
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => {
-                                setSelectedStudent(student);
-                                setShowDeleteDialog(true);
-                              }}
-                            >
-                              Delete
-                            </Button>
+                            {hasPermission(session.user.role, PERMISSIONS.MANAGE_STUDENTS) && (
+                              <>
+                                <Button asChild size="sm" variant="outline">
+                                  <Link href={`/students/${student.id}/edit`}>Edit</Link>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setSelectedStudent(student);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
