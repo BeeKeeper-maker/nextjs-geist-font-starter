@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
+import { PERMISSIONS, hasPermission } from "@/lib/auth";
 
 interface DashboardStats {
   studentsCount: number;
@@ -130,18 +131,31 @@ export default function DashboardPage() {
               <CardDescription>Common management tasks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button asChild className="w-full justify-start">
-                <Link href="/students/new">Add New Student</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/teachers/new">Add New Teacher</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/classes/new">Create New Class</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/attendance">Mark Attendance</Link>
-              </Button>
+              {hasPermission(session.user.role, PERMISSIONS.MANAGE_STUDENTS) && (
+                <Button asChild className="w-full justify-start">
+                  <Link href="/students/create">Add New Student</Link>
+                </Button>
+              )}
+              {hasPermission(session.user.role, PERMISSIONS.MANAGE_TEACHERS) && (
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/teachers/create">Add New Teacher</Link>
+                </Button>
+              )}
+              {hasPermission(session.user.role, PERMISSIONS.MANAGE_CLASSES) && (
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/classes/create">Create New Class</Link>
+                </Button>
+              )}
+              {hasPermission(session.user.role, PERMISSIONS.MANAGE_ATTENDANCE) && (
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/attendance">Mark Attendance</Link>
+                </Button>
+              )}
+              {hasPermission(session.user.role, PERMISSIONS.MANAGE_FEES) && (
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/fees/create">Create Fee Invoice</Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -172,14 +186,44 @@ export default function DashboardPage() {
 
         {/* Navigation Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <NavCard title="Students" href="/students" description="Manage student records" />
-          <NavCard title="Teachers" href="/teachers" description="Manage teaching staff" />
-          <NavCard title="Classes" href="/classes" description="Manage classes & subjects" />
-          <NavCard title="Fees" href="/fees" description="Fee management" />
-          <NavCard title="Attendance" href="/attendance" description="Track attendance" />
-          <NavCard title="Exams" href="/exams" description="Exam & results" />
-          <NavCard title="Library" href="/library" description="Library management" />
-          <NavCard title="Reports" href="/reports" description="Generate reports" />
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_STUDENTS) && (
+            <NavCard title="Students" href="/students" description="Manage student records" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_TEACHERS) && (
+            <NavCard title="Teachers" href="/teachers" description="Manage teaching staff" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_CLASSES) && (
+            <NavCard title="Classes" href="/classes" description="Manage classes & subjects" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_FEES) && (
+            <NavCard title="Fees" href="/fees" description="Fee management" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_ATTENDANCE) && (
+            <NavCard title="Attendance" href="/attendance" description="Track attendance" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_EXAMS) && (
+            <NavCard title="Exams" href="/exams" description="Exam & results" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_FULL_DASHBOARD) && (
+            <NavCard title="Library" href="/library" description="Library management" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_FULL_DASHBOARD) && (
+            <NavCard title="Reports" href="/reports" description="Generate reports" />
+          )}
+          
+          {/* Student/Parent specific cards */}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_OWN_PROFILE) && (
+            <NavCard title="My Profile" href="/profile" description="View your profile" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_OWN_FEES) && (
+            <NavCard title="My Fees" href="/my-fees" description="View your fees" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_OWN_ATTENDANCE) && (
+            <NavCard title="My Attendance" href="/my-attendance" description="View your attendance" />
+          )}
+          {hasPermission(session.user.role, PERMISSIONS.VIEW_OWN_EXAMS) && (
+            <NavCard title="My Results" href="/my-results" description="View your exam results" />
+          )}
         </div>
       </main>
     </div>
