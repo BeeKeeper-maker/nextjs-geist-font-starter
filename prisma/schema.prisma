@@ -1,0 +1,302 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication (Admin, Teacher, Student, Parent roles)
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   // admin, teacher, student, parent
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student   Student? @relation("UserStudent")
+  teacher   Teacher? @relation("UserTeacher")
+  parent    Parent?  @relation("UserParent")
+
+  @@map("users")
+}
+
+// Student model
+model Student {
+  id             Int      @id @default(autoincrement())
+  userId         Int?     @unique
+  name           String
+  rollNumber     String   @unique
+  classId        Int
+  fatherName     String?
+  motherName     String?
+  dateOfBirth    DateTime?
+  gender         String?  // male, female
+  bloodGroup     String?
+  religion       String?  @default("Islam")
+  nationality    String?  @default("Bangladeshi")
+  photo          String?  // file path
+  contactNumber  String?
+  email          String?
+  presentAddress String?
+  permanentAddress String?
+  guardianName   String?
+  guardianPhone  String?
+  guardianRelation String?
+  enrollmentDate DateTime @default(now())
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user        User?        @relation("UserStudent", fields: [userId], references: [id])
+  class       Class        @relation(fields: [classId], references: [id])
+  fees        Fee[]
+  attendances Attendance[]
+  exams       Exam[]
+  parents     StudentParent[]
+  borrowRecords BookBorrow[]
+
+  @@map("students")
+}
+
+// Teacher model
+model Teacher {
+  id             Int      @id @default(autoincrement())
+  userId         Int?     @unique
+  name           String
+  employeeId     String   @unique
+  designation    String?
+  qualification  String?
+  specialization String?
+  subjects       String?  // JSON string of subjects
+  dateOfBirth    DateTime?
+  gender         String?
+  contactNumber  String?
+  email          String?
+  presentAddress String?
+  permanentAddress String?
+  photo          String?  // file path
+  joiningDate    DateTime @default(now())
+  salary         Float?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user    User?   @relation("UserTeacher", fields: [userId], references: [id])
+  classes Class[]
+
+  @@map("teachers")
+}
+
+// Parent model
+model Parent {
+  id            Int      @id @default(autoincrement())
+  userId        Int?     @unique
+  name          String
+  fatherName    String?
+  motherName    String?
+  occupation    String?
+  contactNumber String?
+  email         String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user     User?           @relation("UserParent", fields: [userId], references: [id])
+  students StudentParent[]
+
+  @@map("parents")
+}
+
+// Junction table for Student-Parent relationship (many-to-many)
+model StudentParent {
+  id        Int @id @default(autoincrement())
+  studentId Int
+  parentId  Int
+  relation  String // father, mother, guardian
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id])
+  parent  Parent  @relation(fields: [parentId], references: [id])
+
+  @@unique([studentId, parentId])
+  @@map("student_parents")
+}
+
+// Class model
+model Class {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  section     String?
+  teacherId   Int?
+  capacity    Int?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  teacher  Teacher?  @relation(fields: [teacherId], references: [id])
+  students Student[]
+  subjects Subject[]
+
+  @@map("classes")
+}
+
+// Subject model
+model Subject {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String?  @unique
+  classId     Int
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  class Class @relation(fields: [classId], references: [id])
+  exams Exam[]
+
+  @@map("subjects")
+}
+
+// Fee model
+model Fee {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  feeType     String   // tuition, admission, exam, transport, etc.
+  amount      Float
+  dueDate     DateTime
+  paidDate    DateTime?
+  paidAmount  Float?   @default(0)
+  status      String   @default("pending") // pending, partial, paid, overdue
+  remarks     String?
+  receiptNo   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("fees")
+}
+
+// Attendance model
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  date      DateTime
+  status    String   // present, absent, late, excused
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, date])
+  @@map("attendances")
+}
+
+// Exam model
+model Exam {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  subjectId   Int
+  examType    String   // midterm, final, quiz, assignment
+  examDate    DateTime
+  totalMarks  Float
+  obtainedMarks Float?
+  grade       String?
+  remarks     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@map("exams")
+}
+
+// Library Book model
+model Book {
+  id          Int      @id @default(autoincrement())
+  title       String
+  author      String?
+  isbn        String?  @unique
+  category    String?
+  publisher   String?
+  publishYear Int?
+  totalCopies Int      @default(1)
+  availableCopies Int  @default(1)
+  location    String?  // shelf location
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  borrowRecords BookBorrow[]
+
+  @@map("books")
+}
+
+// Book Borrow model
+model BookBorrow {
+  id         Int       @id @default(autoincrement())
+  bookId     Int
+  studentId  Int
+  borrowDate DateTime  @default(now())
+  dueDate    DateTime
+  returnDate DateTime?
+  status     String    @default("borrowed") // borrowed, returned, overdue
+  fine       Float?    @default(0)
+  remarks    String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  book    Book    @relation(fields: [bookId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("book_borrows")
+}
+
+// Announcement model
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  targetRole  String?  // all, student, teacher, parent
+  isActive    Boolean  @default(true)
+  publishDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+// Academic Year model
+model AcademicYear {
+  id        Int      @id @default(autoincrement())
+  year      String   @unique // e.g., "2024-2025"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("academic_years")
+}
